@@ -1,152 +1,102 @@
-// 1. Configurazione e Inizializzazione
+// Configurazione Supabase (Le tue chiavi corrette)
 const SUB_URL = "https://vnzrewcbnoqbqvzckome.supabase.co";
 const SUB_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZuenJld2Nibm9xYnF2emNrb21lIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzA5Njk2NDUsImV4cCI6MjA4NjU0NTY0NX0.pdnPyYB4DwEjZ10aF3tGigAjiwLGkP-kx07-15L4ass";
 
 const _supabase = supabase.createClient(SUB_URL, SUB_KEY);
 
-// Verifica che popolaSelectDitte() venga chiamata ogni volta che entri nella sezione
+// Gestione Navigazione
 function showSection(id) {
     document.querySelectorAll('section, nav').forEach(s => s.classList.add('hidden'));
     document.getElementById(id).classList.remove('hidden');
     
-    // Ricarica la lista ogni volta che si apre la sezione registrazione
-    if(id === 'section-entrata') {
-        popolaSelectDitte();
-    }
+    // Auto-caricamento quando entri nelle sezioni
+    if(id === 'section-entrata') popolaSelectDitte();
 }
 
-// 3. CARICAMENTO DINAMICO DITTE (Dalla tua nuova tabella)
+// Carica l'elenco ditte dalla tua tabella specifica
 async function popolaSelectDitte() {
     const select = document.getElementById('ent-azienda');
-    if(!select) return;
-
-    // Recupera i dati dalla tabella Elenco_Ditte_Esterne
     const { data, error } = await _supabase
         .from('Elenco_Ditte_Esterne')
         .select('Azienda')
         .order('Azienda', { ascending: true });
 
-    if (error) {
-        console.error("Errore caricamento ditte:", error);
-        select.innerHTML = '<option value="">⚠️ Errore database</option>';
-        return;
+    if (!error) {
+        select.innerHTML = '<option value="">-- Seleziona Azienda --</option>';
+        data.forEach(ditta => {
+            select.innerHTML += `<option value="${ditta.Azienda}">${ditta.Azienda}</option>`;
+        });
     }
-
-    // Costruisce le opzioni
-    let options = '<option value="">-- Seleziona Azienda --</option>';
-    data.forEach(ditta => {
-        options += `<option value="${ditta.Azienda}">${ditta.Azienda}</option>`;
-    });
-    select.innerHTML = options;
 }
 
-// 4. LOGICA INGRESSO
+// Salva Entrata
 async function salvaEntrata() {
     const azienda = document.getElementById('ent-azienda').value;
     const operatori = document.getElementById('ent-operatori').value;
 
-    if (!azienda) {
-        alert("Per favore, seleziona un'azienda dall'elenco.");
-        return;
-    }
+    if (!azienda) return alert("Seleziona una ditta!");
 
     const { error } = await _supabase.from('visits').insert([
-        { 
-            company_name: azienda, 
-            operators_count: parseInt(operatori), 
-            status: 'active',
-            entry_date: new Date().toISOString()
-        }
+        { company_name: azienda, operators_count: parseInt(operatori), status: 'active' }
     ]);
 
     if (!error) {
         alert("Ingresso registrato!");
         showSection('home');
-    } else {
-        alert("Errore nell'invio dei dati.");
     }
 }
 
-// 5. LOGICA USCITA (Ditte attualmente in sede)
+// Carica chi è dentro per l'uscita
 async function caricaPresenti() {
     const container = document.getElementById('lista-presenti');
-    container.innerHTML = "<p>Verifica ditte in sede...</p>";
+    container.innerHTML = "Caricamento...";
 
     const { data, error } = await _supabase
         .from('visits')
         .select('*')
         .eq('status', 'active');
 
-    if (data.length === 0) {
-        container.innerHTML = "<p style='text-align:center; color:#888;'>Nessuna ditta presente.</p>";
-        return;
+    if (!error) {
+        container.innerHTML = data.length ? "" : "<p style='text-align:center;'>Nessuno in sede.</p>";
+        data.forEach(item => {
+            container.innerHTML += `
+                <div class="card-visita">
+                    <div>
+                        <strong style="font-size:1.1rem;">${item.company_name}</strong><br>
+                        <small style="color:#64748b;">${item.operators_count} persone</small>
+                    </div>
+                    <button class="btn-exit" onclick="salvaUscita(${item.id})">ESCI</button>
+                </div>`;
+        });
     }
-
-    container.innerHTML = "";
-    data.forEach(item => {
-        const ora = new Date(item.entry_date).toLocaleTimeString('it-IT', {hour: '2-digit', minute:'2-digit'});
-        container.innerHTML += `
-            <div class="card-visita">
-                <div>
-                    <strong>${item.company_name}</strong><br>
-                    <small>Entrata: ${ora} (${item.operators_count} pers.)</small>
-                </div>
-                <button onclick="salvaUscita(${item.id})">ESCI</button>
-            </div>`;
-    });
 }
 
 async function salvaUscita(id) {
-    const { error } = await _supabase
-        .from('visits')
-        .update({ exit_date: new Date().toISOString(), status: 'closed' })
-        .eq('id', id);
-
-    if (!error) caricaPresenti();
+    await _supabase.from('visits').update({ exit_date: new Date(), status: 'closed' }).eq('id', id);
+    caricaPresenti();
 }
 
-// 6. ARCHIVIO E EXPORT
+// Archivio
 let datiArchivio = [];
-
 async function caricaArchivio() {
     const container = document.getElementById('tabella-archivio');
-    const { data, error } = await _supabase
-        .from('visits')
-        .select('*')
-        .order('entry_date', { ascending: false });
-
-    if (!error) {
+    const { data, error } = await _supabase.from('visits').select('*').order('entry_date', {ascending: false});
+    if(!error) {
         datiArchivio = data;
-        let html = `<table><thead><tr><th>Ditta</th><th>Data</th><th>In</th><th>Out</th></tr></thead><tbody>`;
+        let table = `<table style="width:100%; border-spacing:0; margin-top:10px;">
+            <thead style="background:#f1f5f9;">
+                <tr><th style="padding:10px; text-align:left;">Ditta</th><th style="padding:10px;">In</th><th style="padding:10px;">Out</th></tr>
+            </thead><tbody>`;
         data.forEach(d => {
-            const dataGiorno = new Date(d.entry_date).toLocaleDateString('it-IT');
-            const oraIn = new Date(d.entry_date).toLocaleTimeString('it-IT', {hour:'2-digit', minute:'2-digit'});
-            const oraOut = d.exit_date ? new Date(d.exit_date).toLocaleTimeString('it-IT', {hour:'2-digit', minute:'2-digit'}) : '--:--';
-            html += `<tr><td>${d.company_name}</td><td>${dataGiorno}</td><td>${oraIn}</td><td>${oraOut}</td></tr>`;
+            const oraIn = new Date(d.entry_date).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+            const oraOut = d.exit_date ? new Date(d.exit_date).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) : '-';
+            table += `<tr style="border-bottom:1px solid #eee;">
+                <td style="padding:12px;">${d.company_name}</td>
+                <td style="padding:12px; text-align:center;">${oraIn}</td>
+                <td style="padding:12px; text-align:center;">${oraOut}</td>
+            </tr>`;
         });
-        html += `</tbody></table>`;
-        container.innerHTML = html;
+        table += `</tbody></table>`;
+        container.innerHTML = table;
     }
 }
-
-// Funzioni Export (Excel/PDF)
-function downloadExcel() {
-    const ws = XLSX.utils.json_to_sheet(datiArchivio);
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "Visite");
-    XLSX.writeFile(wb, "Report_Accessi_PT.xlsx");
-}
-
-function downloadPDF() {
-    const { jsPDF } = window.jspdf;
-    const doc = new jsPDF();
-    doc.text("Registro Accessi Ditte Esterne", 10, 10);
-    const rows = datiArchivio.map(d => [d.company_name, d.entry_date, d.exit_date || 'In sede']);
-    doc.autoTable({ head: [['Azienda', 'Ingresso', 'Uscita']], body: rows });
-    doc.save("Report_Accessi.pdf");
-}
-
-// Inizializzazione automatica
-document.addEventListener('DOMContentLoaded', () => {
-    popolaSelectDitte();
-});
