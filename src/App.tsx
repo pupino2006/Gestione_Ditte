@@ -1,6 +1,9 @@
 import { useState } from 'react'
 import { supabase } from './supabase'
-import { Visit } from './types'
+import type { Visit } from './types'
+import jsPDF from 'jspdf'
+import 'jspdf-autotable'
+import * as XLSX from 'xlsx'
 import './App.css'
 
 function App() {
@@ -51,6 +54,43 @@ function App() {
     }
   }
 
+  const exportToPDF = () => {
+    const doc = new jsPDF()
+    const tableColumn = ['ID', 'Nome Azienda', 'Operatori', 'Data Entrata', 'Data Uscita', 'Stato']
+    const tableRows: (string | number)[][] = []
+
+    visits.forEach(visit => {
+      const visitData = [
+        visit.id,
+        visit.company_name,
+        visit.operators_count,
+        new Date(visit.entry_date).toLocaleString(),
+        visit.exit_date ? new Date(visit.exit_date).toLocaleString() : 'N/A',
+        visit.status
+      ]
+      tableRows.push(visitData)
+    })
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    ;(doc as any).autoTable(tableColumn, tableRows, { startY: 20 })
+    doc.text('Archivio Visite', 14, 15)
+    doc.save('archivio_visite.pdf')
+  }
+
+  const exportToExcel = () => {
+    const worksheet = XLSX.utils.json_to_sheet(visits.map(visit => ({
+      ID: visit.id,
+      'Nome Azienda': visit.company_name,
+      Operatori: visit.operators_count,
+      'Data Entrata': new Date(visit.entry_date).toLocaleString(),
+      'Data Uscita': visit.exit_date ? new Date(visit.exit_date).toLocaleString() : 'N/A',
+      Stato: visit.status
+    })))
+    const workbook = XLSX.utils.book_new()
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Visite')
+    XLSX.writeFile(workbook, 'archivio_visite.xlsx')
+  }
+
   const renderHome = () => (
     <div className="home">
       <h1>Gestione Presenza Ditte Esterne</h1>
@@ -64,6 +104,8 @@ function App() {
     <div className="archive">
       <h1>Archivio</h1>
       <button onClick={() => setView('home')}>Torna alla Home</button>
+      <button onClick={exportToPDF}>Scarica PDF</button>
+      <button onClick={exportToExcel}>Scarica Excel</button>
       {loading ? <p>Loading...</p> : (
         <ul>
           {visits.map(visit => (
