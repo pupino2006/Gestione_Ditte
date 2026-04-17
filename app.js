@@ -1,70 +1,95 @@
-// Configurazione Supabase
+// 1. Configurazione e Inizializzazione
 const SUB_URL = "https://vnzrewcbnoqbqvzckome.supabase.co";
 const SUB_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZuenJld2Nibm9xYnF2emNrb21lIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzA5Njk2NDUsImV4cCI6MjA4NjU0NTY0NX0.pdnPyYB4DwEjZ10aF3tGigAjiwLGkP-kx07-15L4ass";
 
-// Inizializzazione Client
 const _supabase = supabase.createClient(SUB_URL, SUB_KEY);
 
-// Funzione per navigare tra le sezioni
+// 2. Funzioni di Navigazione
 function showSection(id) {
     document.querySelectorAll('section, nav').forEach(s => s.classList.add('hidden'));
     document.getElementById(id).classList.remove('hidden');
+    
+    // Se entriamo nella sezione entrata, ricarichiamo la lista ditte per sicurezza
+    if(id === 'section-entrata') popolaSelectDitte();
 }
 
-// 1. REGISTRA ENTRATA
-async function salvaEntrata() {
-    const nome = document.getElementById('ent-azienda').value;
-    const num = document.getElementById('ent-operatori').value;
+// 3. CARICAMENTO DINAMICO DITTE (Dalla tua nuova tabella)
+async function popolaSelectDitte() {
+    const select = document.getElementById('ent-azienda');
+    if(!select) return;
 
-    if (!nome || !num) {
-        alert("Inserisci tutti i dati!");
+    // Recupera i dati dalla tabella Elenco_Ditte_Esterne
+    const { data, error } = await _supabase
+        .from('Elenco_Ditte_Esterne')
+        .select('Azienda')
+        .order('Azienda', { ascending: true });
+
+    if (error) {
+        console.error("Errore caricamento ditte:", error);
+        select.innerHTML = '<option value="">⚠️ Errore database</option>';
+        return;
+    }
+
+    // Costruisce le opzioni
+    let options = '<option value="">-- Seleziona Azienda --</option>';
+    data.forEach(ditta => {
+        options += `<option value="${ditta.Azienda}">${ditta.Azienda}</option>`;
+    });
+    select.innerHTML = options;
+}
+
+// 4. LOGICA INGRESSO
+async function salvaEntrata() {
+    const azienda = document.getElementById('ent-azienda').value;
+    const operatori = document.getElementById('ent-operatori').value;
+
+    if (!azienda) {
+        alert("Per favore, seleziona un'azienda dall'elenco.");
         return;
     }
 
     const { error } = await _supabase.from('visits').insert([
-        { company_name: nome, operators_count: parseInt(num), status: 'active' }
+        { 
+            company_name: azienda, 
+            operators_count: parseInt(operatori), 
+            status: 'active',
+            entry_date: new Date().toISOString()
+        }
     ]);
 
     if (!error) {
-        alert("Entrata registrata con successo!");
-        document.getElementById('ent-azienda').value = "";
+        alert("Ingresso registrato!");
         showSection('home');
     } else {
-        console.error(error);
-        alert("Errore durante il salvataggio.");
+        alert("Errore nell'invio dei dati.");
     }
 }
 
-// 2. CARICA DITTE PRESENTI (Gestione Uscita)
+// 5. LOGICA USCITA (Ditte attualmente in sede)
 async function caricaPresenti() {
     const container = document.getElementById('lista-presenti');
-    container.innerHTML = "<p>Caricamento in corso...</p>";
+    container.innerHTML = "<p>Verifica ditte in sede...</p>";
 
     const { data, error } = await _supabase
         .from('visits')
         .select('*')
         .eq('status', 'active');
 
-    if (error) {
-        container.innerHTML = "Errore nel caricamento dei dati.";
-        return;
-    }
-
     if (data.length === 0) {
-        container.innerHTML = "<p>Nessuna ditta presente al momento.</p>";
+        container.innerHTML = "<p style='text-align:center; color:#888;'>Nessuna ditta presente.</p>";
         return;
     }
 
     container.innerHTML = "";
     data.forEach(item => {
-        const dataIngresso = new Date(item.entry_date).toLocaleString('it-IT');
+        const ora = new Date(item.entry_date).toLocaleTimeString('it-IT', {hour: '2-digit', minute:'2-digit'});
         container.innerHTML += `
-            <div class="card">
+            <div class="card-visita">
                 <div>
                     <strong>${item.company_name}</strong><br>
-                    <small>${item.operators_count} persone - Entrata: ${dataIngresso}</small>
+                    <small>Entrata: ${ora} (${item.operators_count} pers.)</small>
                 </div>
-                <button onclick="salvaUscita(${item.id})">Esci</button>
+                <button onclick="salvaUscita(${item.id})">ESCI</button>
             </div>`;
     });
 }
@@ -75,20 +100,14 @@ async function salvaUscita(id) {
         .update({ exit_date: new Date().toISOString(), status: 'closed' })
         .eq('id', id);
 
-    if (!error) {
-        caricaPresenti();
-    } else {
-        alert("Errore nella registrazione uscita.");
-    }
+    if (!error) caricaPresenti();
 }
 
-// 3. ARCHIVIO
+// 6. ARCHIVIO E EXPORT
 let datiArchivio = [];
 
 async function caricaArchivio() {
     const container = document.getElementById('tabella-archivio');
-    container.innerHTML = "Caricamento storico...";
-
     const { data, error } = await _supabase
         .from('visits')
         .select('*')
@@ -96,62 +115,36 @@ async function caricaArchivio() {
 
     if (!error) {
         datiArchivio = data;
-        if (data.length === 0) {
-            container.innerHTML = "L'archivio è vuoto.";
-            return;
-        }
-
-        let html = `<table>
-            <thead>
-                <tr>
-                    <th>Ditta</th>
-                    <th>In</th>
-                    <th>Out</th>
-                    <th>Pers.</th>
-                </tr>
-            </thead>
-            <tbody>`;
-        
+        let html = `<table><thead><tr><th>Ditta</th><th>Data</th><th>In</th><th>Out</th></tr></thead><tbody>`;
         data.forEach(d => {
-            const dateIn = new Date(d.entry_date).toLocaleDateString('it-IT');
-            const dateOut = d.exit_date ? new Date(d.exit_date).toLocaleTimeString('it-IT', {hour: '2-digit', minute:'2-digit'}) : '-';
-            html += `<tr>
-                <td>${d.company_name}</td>
-                <td>${dateIn}</td>
-                <td>${dateOut}</td>
-                <td>${d.operators_count}</td>
-            </tr>`;
+            const dataGiorno = new Date(d.entry_date).toLocaleDateString('it-IT');
+            const oraIn = new Date(d.entry_date).toLocaleTimeString('it-IT', {hour:'2-digit', minute:'2-digit'});
+            const oraOut = d.exit_date ? new Date(d.exit_date).toLocaleTimeString('it-IT', {hour:'2-digit', minute:'2-digit'}) : '--:--';
+            html += `<tr><td>${d.company_name}</td><td>${dataGiorno}</td><td>${oraIn}</td><td>${oraOut}</td></tr>`;
         });
         html += `</tbody></table>`;
         container.innerHTML = html;
     }
 }
 
-// Funzioni Export
+// Funzioni Export (Excel/PDF)
 function downloadExcel() {
-    if(datiArchivio.length === 0) return alert("Nessun dato da esportare");
     const ws = XLSX.utils.json_to_sheet(datiArchivio);
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Visite");
-    XLSX.writeFile(wb, "Report_Accessi.xlsx");
+    XLSX.writeFile(wb, "Report_Accessi_PT.xlsx");
 }
 
 function downloadPDF() {
-    if(datiArchivio.length === 0) return alert("Nessun dato da esportare");
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF();
     doc.text("Registro Accessi Ditte Esterne", 10, 10);
-    const rows = datiArchivio.map(d => [
-        d.company_name, 
-        d.operators_count, 
-        new Date(d.entry_date).toLocaleString(), 
-        d.exit_date ? new Date(d.exit_date).toLocaleString() : 'In corso'
-    ]);
-    doc.autoTable({ head: [['Ditta', 'Pers', 'Ingresso', 'Uscita']], body: rows });
+    const rows = datiArchivio.map(d => [d.company_name, d.entry_date, d.exit_date || 'In sede']);
+    doc.autoTable({ head: [['Azienda', 'Ingresso', 'Uscita']], body: rows });
     doc.save("Report_Accessi.pdf");
 }
 
-// Registrazione Service Worker
-if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('sw.js').catch(() => console.log("SW non registrato, ignorabile in locale"));
-}
+// Inizializzazione automatica
+document.addEventListener('DOMContentLoaded', () => {
+    popolaSelectDitte();
+});

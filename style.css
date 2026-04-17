@@ -1,0 +1,116 @@
+:root {
+    --primary: #004a99; /* Blu del tuo link */
+    --bg: #f4f7f9;
+    --card-bg: #ffffff;
+    --text: #333;
+    --success: #28a745;
+    --danger: #dc3545;
+}
+
+body {
+    font-family: 'Segoe UI', Roboto, sans-serif;
+    background-color: var(--bg);
+    margin: 0;
+    color: var(--text);
+}
+
+.container {
+    max-width: 600px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+.hidden { display: none; }
+
+header { text-align: center; margin-bottom: 30px; }
+.main-logo { height: 60px; margin-bottom: 10px; }
+
+/* GRIGLIA HOME */
+.grid-menu {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 20px;
+}
+
+.menu-card {
+    background: var(--card-bg);
+    border: none;
+    padding: 40px 20px;
+    border-radius: 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    box-shadow: 0 10px 20px rgba(0,0,0,0.05);
+    transition: transform 0.2s;
+}
+
+.menu-card:active { transform: scale(0.95); }
+
+.menu-card .icon { font-size: 3rem; margin-bottom: 10px; }
+.menu-card .label { font-size: 1.2rem; font-weight: bold; color: var(--primary); }
+
+/* HEADER SEZIONI */
+.header-inline {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    margin-bottom: 25px;
+}
+
+.btn-back {
+    background: #e0e6ed;
+    border: none;
+    width: 45px;
+    height: 45px;
+    border-radius: 50%;
+    font-size: 1.2rem;
+}
+
+/* FORM E LISTE */
+.form-group label { display: block; margin-bottom: 8px; font-weight: 600; }
+input {
+    width: 100%;
+    padding: 15px;
+    margin-bottom: 20px;
+    border: 1px solid #ddd;
+    border-radius: 10px;
+    font-size: 1rem;
+    box-sizing: border-box;
+}
+
+.btn-main {
+    width: 100%;
+    padding: 18px;
+    border: none;
+    border-radius: 12px;
+    font-weight: bold;
+    font-size: 1rem;
+    color: white;
+}
+.btn-save { background: var(--primary); }
+
+/* CARDS USCITA */
+.card-visita {
+    background: white;
+    padding: 20px;
+    border-radius: 15px;
+    margin-bottom: 15px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.03);
+}
+
+.card-visita button {
+    background: var(--danger);
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 8px;
+}
+
+/* TABELLE */
+.table-wrapper { overflow-x: auto; background: white; border-radius: 15px; }
+table { width: 100%; border-collapse: collapse; }
+th, td { padding: 12px; border-bottom: 1px solid #eee; text-align: left; font-size: 0.9rem; }
+th { background: #f8f9fa; color: var(--primary); }
