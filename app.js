@@ -16,16 +16,26 @@ function showSection(id) {
 // Gestisce la selezione nel select ditta
 function gestisciSelezioneDitta() {
     const select = document.getElementById('ent-azienda');
-    const container = document.getElementById('nuova-ditta-container');
-    const input = document.getElementById('nuova-ditta');
 
     if (select.value === 'nuova-ditta') {
-        container.style.display = 'block';
-        input.focus();
-    } else {
-        container.style.display = 'none';
-        input.value = '';
+        apriModalNuovaDitta();
     }
+}
+
+// Apre il modal per nuova ditta
+function apriModalNuovaDitta() {
+    document.getElementById('modal-nuova-ditta').style.display = 'flex';
+    document.getElementById('modal-nome-azienda').focus();
+}
+
+// Chiude il modal
+function chiudiModal() {
+    document.getElementById('modal-nuova-ditta').style.display = 'none';
+    // Reset form
+    document.getElementById('modal-nome-azienda').value = '';
+    document.getElementById('modal-telefono').value = '';
+    document.getElementById('modal-email').value = '';
+    document.getElementById('modal-note').value = '';
 }
 
 // Carica l'elenco ditte dalla tua tabella specifica
@@ -46,37 +56,52 @@ async function popolaSelectDitte() {
     }
 }
 
-// Aggiungi nuova ditta alla tabella
-async function aggiungiDitta() {
-    const nomeDitta = document.getElementById('nuova-ditta').value.trim();
+// Salva nuova ditta dal modal
+async function salvaNuovaDitta() {
+    const nomeAzienda = document.getElementById('modal-nome-azienda').value.trim();
+    const telefono = document.getElementById('modal-telefono').value.trim();
+    const email = document.getElementById('modal-email').value.trim();
+    const note = document.getElementById('modal-note').value.trim();
 
-    if (!nomeDitta) return alert("Inserisci il nome della ditta!");
+    if (!nomeAzienda) {
+        alert("Il nome dell'azienda è obbligatorio!");
+        return;
+    }
 
     // Verifica se esiste già
     const { data: esistente } = await _supabase
         .from('Elenco_Ditte_Esterne')
         .select('Azienda')
-        .eq('Azienda', nomeDitta);
+        .eq('Azienda', nomeAzienda);
 
     if (esistente && esistente.length > 0) {
         alert("Questa ditta esiste già!");
         return;
     }
 
+    // Prepara i dati da inserire
+    const nuovaDitta = {
+        Azienda: nomeAzienda
+    };
+
+    // Aggiungi campi opzionali solo se valorizzati
+    if (telefono) nuovaDitta.Telefono = telefono;
+    if (email) nuovaDitta.Email = email;
+    if (note) nuovaDitta.Note = note;
+
     // Inserisci nuova ditta
     const { error } = await _supabase
         .from('Elenco_Ditte_Esterne')
-        .insert([{ Azienda: nomeDitta }]);
+        .insert([nuovaDitta]);
 
     if (!error) {
         alert("Ditta aggiunta con successo!");
         // Ricarica il select
         popolaSelectDitte();
-        // Nasconde il campo nuova ditta
-        document.getElementById('nuova-ditta-container').style.display = 'none';
-        document.getElementById('nuova-ditta').value = '';
+        // Chiudi modal
+        chiudiModal();
         // Seleziona la nuova ditta
-        document.getElementById('ent-azienda').value = nomeDitta;
+        document.getElementById('ent-azienda').value = nomeAzienda;
     } else {
         alert("Errore nell'aggiunta della ditta: " + error.message);
     }
