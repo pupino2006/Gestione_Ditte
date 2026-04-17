@@ -17,21 +17,27 @@
         <div class="brand-zone">
             <img src="pt.png" alt="Logo PT" class="app-logo">
             <h1>Gestione Accessi</h1>
-            <p>Controllo Ingressi Ditte Esterne</p>
+            <p>Piattaforma Controllo Ingressi</p>
         </div>
 
         <div class="dashboard-grid">
             <button class="dash-card card-blue" onclick="showSection('section-entrata')">
-                <span class="dash-icon">📥</span>
-                <span class="dash-label">Nuova Entrata</span>
+                <div class="card-content">
+                    <span class="dash-icon">📥</span>
+                    <span class="dash-label">Nuova Entrata</span>
+                </div>
             </button>
             <button class="dash-card card-blue" onclick="showSection('section-uscita'); caricaPresenti();">
-                <span class="dash-icon">📤</span>
-                <span class="dash-label">Registra Uscita</span>
+                <div class="card-content">
+                    <span class="dash-icon">📤</span>
+                    <span class="dash-label">Registra Uscita</span>
+                </div>
             </button>
             <button class="dash-card card-dark" onclick="showSection('section-archivio'); caricaArchivio();">
-                <span class="dash-icon">📁</span>
-                <span class="dash-label">Archivio</span>
+                <div class="card-content">
+                    <span class="dash-icon">📁</span>
+                    <span class="dash-label">Archivio Storico</span>
+                </div>
             </button>
         </div>
     </nav>
@@ -39,44 +45,43 @@
     <section id="section-entrata" class="app-container hidden">
         <div class="section-header">
             <button class="back-circle" onclick="showSection('home')">←</button>
-            <h2>Registra Ingresso</h2>
+            <h2>Ingresso Ditta</h2>
         </div>
         <div class="panel">
-            <label>Seleziona Azienda</label>
-            <select id="ent-azienda" onchange="gestisciSelezioneDitta()">
-                <option value="">Caricamento ditte...</option>
-            </select>
-
-            <div id="nuova-ditta-container" style="display:none; margin-top:10px;">
-                <input type="text" id="nuova-ditta" placeholder="Nome della nuova ditta" style="margin-bottom:10px;">
-                <button class="btn-confirm" onclick="aggiungiDitta()" style="width:auto; padding:10px 20px;">Aggiungi Ditta</button>
+            <div class="input-group">
+                <label>Seleziona Azienda</label>
+                <select id="ent-azienda">
+                    <option value="">Caricamento ditte...</option>
+                </select>
             </div>
-
-            <label>Numero Persone</label>
-            <input type="number" id="ent-operatori" value="1" min="1">
-
-            <button class="btn-confirm" onclick="salvaEntrata()">CONFERMA INGRESSO</button>
+            
+            <div class="input-group">
+                <label>Numero Operatori</label>
+                <input type="number" id="ent-operatori" value="1" min="1">
+            </div>
+            
+            <button class="btn-confirm" onclick="salvaEntrata()">REGISTRA ENTRATA</button>
         </div>
     </section>
 
     <section id="section-uscita" class="app-container hidden">
         <div class="section-header">
             <button class="back-circle" onclick="showSection('home')">←</button>
-            <h2>Ditte Presenti</h2>
+            <h2>Ditte in Sede</h2>
         </div>
-        <div id="lista-presenti"></div>
+        <div id="lista-presenti" class="list-wrapper"></div>
     </section>
 
     <section id="section-archivio" class="app-container hidden">
         <div class="section-header">
             <button class="back-circle" onclick="showSection('home')">←</button>
-            <h2>Storico Accessi</h2>
+            <h2>Storico</h2>
         </div>
-        <div class="panel action-bar">
-            <button onclick="downloadExcel()" class="btn-alt">📊 Excel</button>
-            <button onclick="downloadPDF()" class="btn-alt">📄 PDF</button>
+        <div class="export-bar panel">
+            <button onclick="downloadExcel()" class="btn-export">📊 Excel</button>
+            <button onclick="downloadPDF()" class="btn-export">📄 PDF</button>
         </div>
-        <div id="tabella-archivio" class="table-container"></div>
+        <div id="tabella-archivio" class="table-card"></div>
     </section>
 
     <script src="app.js"></script>
