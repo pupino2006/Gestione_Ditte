@@ -4,13 +4,15 @@ const SUB_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsIn
 
 const _supabase = supabase.createClient(SUB_URL, SUB_KEY);
 
-// 2. Funzioni di Navigazione
+// Verifica che popolaSelectDitte() venga chiamata ogni volta che entri nella sezione
 function showSection(id) {
     document.querySelectorAll('section, nav').forEach(s => s.classList.add('hidden'));
     document.getElementById(id).classList.remove('hidden');
     
-    // Se entriamo nella sezione entrata, ricarichiamo la lista ditte per sicurezza
-    if(id === 'section-entrata') popolaSelectDitte();
+    // Ricarica la lista ogni volta che si apre la sezione registrazione
+    if(id === 'section-entrata') {
+        popolaSelectDitte();
+    }
 }
 
 // 3. CARICAMENTO DINAMICO DITTE (Dalla tua nuova tabella)
