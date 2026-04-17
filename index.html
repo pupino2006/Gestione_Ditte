@@ -43,13 +43,18 @@
         </div>
         <div class="panel">
             <label>Seleziona Azienda</label>
-            <select id="ent-azienda">
+            <select id="ent-azienda" onchange="gestisciSelezioneDitta()">
                 <option value="">Caricamento ditte...</option>
             </select>
-            
+
+            <div id="nuova-ditta-container" style="display:none; margin-top:10px;">
+                <input type="text" id="nuova-ditta" placeholder="Nome della nuova ditta" style="margin-bottom:10px;">
+                <button class="btn-confirm" onclick="aggiungiDitta()" style="width:auto; padding:10px 20px;">Aggiungi Ditta</button>
+            </div>
+
             <label>Numero Persone</label>
             <input type="number" id="ent-operatori" value="1" min="1">
-            
+
             <button class="btn-confirm" onclick="salvaEntrata()">CONFERMA INGRESSO</button>
         </div>
     </section>

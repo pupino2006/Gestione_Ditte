@@ -8,9 +8,24 @@ const _supabase = supabase.createClient(SUB_URL, SUB_KEY);
 function showSection(id) {
     document.querySelectorAll('section, nav').forEach(s => s.classList.add('hidden'));
     document.getElementById(id).classList.remove('hidden');
-    
+
     // Auto-caricamento quando entri nelle sezioni
     if(id === 'section-entrata') popolaSelectDitte();
+}
+
+// Gestisce la selezione nel select ditta
+function gestisciSelezioneDitta() {
+    const select = document.getElementById('ent-azienda');
+    const container = document.getElementById('nuova-ditta-container');
+    const input = document.getElementById('nuova-ditta');
+
+    if (select.value === 'nuova-ditta') {
+        container.style.display = 'block';
+        input.focus();
+    } else {
+        container.style.display = 'none';
+        input.value = '';
+    }
 }
 
 // Carica l'elenco ditte dalla tua tabella specifica
@@ -26,6 +41,44 @@ async function popolaSelectDitte() {
         data.forEach(ditta => {
             select.innerHTML += `<option value="${ditta.Azienda}">${ditta.Azienda}</option>`;
         });
+        // Aggiungi opzione per nuova ditta
+        select.innerHTML += '<option value="nuova-ditta">➕ Aggiungi nuova ditta</option>';
+    }
+}
+
+// Aggiungi nuova ditta alla tabella
+async function aggiungiDitta() {
+    const nomeDitta = document.getElementById('nuova-ditta').value.trim();
+
+    if (!nomeDitta) return alert("Inserisci il nome della ditta!");
+
+    // Verifica se esiste già
+    const { data: esistente } = await _supabase
+        .from('Elenco_Ditte_Esterne')
+        .select('Azienda')
+        .eq('Azienda', nomeDitta);
+
+    if (esistente && esistente.length > 0) {
+        alert("Questa ditta esiste già!");
+        return;
+    }
+
+    // Inserisci nuova ditta
+    const { error } = await _supabase
+        .from('Elenco_Ditte_Esterne')
+        .insert([{ Azienda: nomeDitta }]);
+
+    if (!error) {
+        alert("Ditta aggiunta con successo!");
+        // Ricarica il select
+        popolaSelectDitte();
+        // Nasconde il campo nuova ditta
+        document.getElementById('nuova-ditta-container').style.display = 'none';
+        document.getElementById('nuova-ditta').value = '';
+        // Seleziona la nuova ditta
+        document.getElementById('ent-azienda').value = nomeDitta;
+    } else {
+        alert("Errore nell'aggiunta della ditta: " + error.message);
     }
 }
 
@@ -34,7 +87,7 @@ async function salvaEntrata() {
     const azienda = document.getElementById('ent-azienda').value;
     const operatori = document.getElementById('ent-operatori').value;
 
-    if (!azienda) return alert("Seleziona una ditta!");
+    if (!azienda || azienda === 'nuova-ditta') return alert("Seleziona una ditta valida!");
 
     const { error } = await _supabase.from('visits').insert([
         { company_name: azienda, operators_count: parseInt(operatori), status: 'active' }
@@ -99,4 +152,51 @@ async function caricaArchivio() {
         table += `</tbody></table>`;
         container.innerHTML = table;
     }
+}
+
+// Download Excel
+function downloadExcel() {
+    if (!datiArchivio.length) return alert("Nessun dato da esportare!");
+
+    const datiFormattati = datiArchivio.map(d => ({
+        'Ditta': d.company_name,
+        'Persone': d.operators_count,
+        'Data Entrata': new Date(d.entry_date).toLocaleDateString('it-IT'),
+        'Ora Entrata': new Date(d.entry_date).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}),
+        'Data Uscita': d.exit_date ? new Date(d.exit_date).toLocaleDateString('it-IT') : '-',
+        'Ora Uscita': d.exit_date ? new Date(d.exit_date).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) : '-',
+        'Stato': d.status
+    }));
+
+    const ws = XLSX.utils.json_to_sheet(datiFormattati);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Archivio Accessi');
+    XLSX.writeFile(wb, `archivio_accessi_${new Date().toISOString().split('T')[0]}.xlsx`);
+}
+
+// Download PDF
+function downloadPDF() {
+    if (!datiArchivio.length) return alert("Nessun dato da esportare!");
+
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+
+    const colonne = ['Ditta', 'Persone', 'Entrata', 'Uscita', 'Stato'];
+    const righe = datiArchivio.map(d => [
+        d.company_name,
+        d.operators_count,
+        new Date(d.entry_date).toLocaleString('it-IT'),
+        d.exit_date ? new Date(d.exit_date).toLocaleString('it-IT') : '-',
+        d.status
+    ]);
+
+    doc.autoTable({
+        head: [colonne],
+        body: righe,
+        theme: 'grid',
+        styles: { fontSize: 8 },
+        headStyles: { fillColor: [0, 74, 153] }
+    });
+
+    doc.save(`archivio_accessi_${new Date().toISOString().split('T')[0]}.pdf`);
 }

@@ -89,6 +89,10 @@ input, select {
     box-sizing: border-box;
 }
 
+#nuova-ditta-container input {
+    margin-bottom: 10px;
+}
+
 .btn-confirm {
     width: 100%;
     padding: 16px;
