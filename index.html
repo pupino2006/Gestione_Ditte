@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestione Accessi PT</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="manifest" href="manifest.json">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
+</head>
+<body>
+    <nav id="home">
+        <h1>Controllo Accessi</h1>
+        <div class="menu">
+            <button onclick="showSection('section-entrata')">➕ Registra Entrata</button>
+            <button onclick="showSection('section-uscita'); caricaPresenti();">🚪 Registra Uscita</button>
+            <button onclick="showSection('section-archivio'); caricaArchivio();">📁 Archivio</button>
+        </div>
+    </nav>
+
+    <section id="section-entrata" class="hidden">
+        <button class="back-btn" onclick="showSection('home')">⬅ Indietro</button>
+        <h2>Nuova Entrata</h2>
+        <input type="text" id="ent-azienda" placeholder="Nome Ditta">
+        <input type="number" id="ent-operatori" placeholder="N. Operatori" value="1">
+        <button class="save-btn" onclick="salvaEntrata()">Conferma Entrata</button>
+    </section>
+
+    <section id="section-uscita" class="hidden">
+        <button class="back-btn" onclick="showSection('home')">⬅ Indietro</button>
+        <h2>Ditte in Stabilimento</h2>
+        <div id="lista-presenti"></div>
+    </section>
+
+    <section id="section-archivio" class="hidden">
+        <button class="back-btn" onclick="showSection('home')">⬅ Indietro</button>
+        <h2>Storico Accessi</h2>
+        <div class="export-btns">
+            <button onclick="downloadExcel()">Excel</button>
+            <button onclick="downloadPDF()">PDF</button>
+        </div>
+        <div id="tabella-archivio"></div>
+    </section>
+
+    <script src="app.js"></script>
+</body>
+</html>
