@@ -141,7 +141,8 @@ async function caricaPresenti() {
                 <div class="card-visita">
                     <div>
                         <strong style="font-size:1.1rem;">${item.company_name}</strong><br>
-                        <small style="color:#64748b;">${item.operators_count} persone</small>
+                        <small style="color:#64748b;">${item.operators_count} persone</small><br>
+                        <small style="color:#64748b;">${item.entry_date ? new Date(item.entry_date).toLocaleString('it-IT') : '-'}</small>
                     </div>
                     <button class="btn-exit" onclick="salvaUscita(${item.id})">ESCI</button>
                 </div>`;
@@ -163,7 +164,7 @@ async function caricaArchivio() {
         datiArchivio = data;
         let table = `<table style="width:100%; border-spacing:0; margin-top:10px;">
             <thead style="background:#f1f5f9;">
-                <tr><th style="padding:10px; text-align:left;">Ditta</th><th style="padding:10px;">Persone</th><th style="padding:10px;">Data In</th><th style="padding:10px;">Data Out</th><th style="padding:10px;">In</th><th style="padding:10px;">Out</th></tr>
+                <tr><th style="padding:10px; text-align:left;">Ditta</th><th style="padding:10px;">Persone</th><th style="padding:10px;">In</th><th style="padding:10px;">Out</th></tr>
             </thead><tbody>`;
         data.forEach(d => {
             const oraIn = new Date(d.entry_date).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
@@ -211,15 +212,12 @@ function downloadPDF() {
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF();
 
-    const colonne = ['Ditta', 'Persone', 'Data Entrata', 'Data Uscita', 'Ora Entrata', 'Ora Uscita', 'Stato'];
+    const colonne = ['Ditta', 'Persone', 'In', 'Out', 'Stato'];
     const righe = datiArchivio.map(d => [
         d.company_name,
         d.operators_count,
-        new Date(d.entry_date).toLocaleDateString('it-IT'),
+        d.entry_date ? new Date(d.entry_date).toLocaleDateString('it-IT') : '-',
         d.exit_date ? new Date(d.exit_date).toLocaleDateString('it-IT') : '-',
-        d.operators_count,
-        d.entry_date ? new Date(d.entry_date).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) : '-',
-        d.exit_date ? new Date(d.exit_date).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) : '-',
         d.status
     ]);
 
