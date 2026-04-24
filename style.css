@@ -217,7 +217,7 @@ input, select {
     font-weight: 600;
     font-size: 0.9rem;
     text-align: center;
-    border: 1px solid rgba(255,255,255,0.15);
+    border: 1px solid rgba(211, 116, 116, 0.904);
 }
 
 #tbl-archivio .header-main th {
@@ -263,7 +263,7 @@ input, select {
 
 #tbl-archivio .editable-row td[contenteditable="true"]:hover {
     background: #f1f5f9;
-    border-color: #cbd5e1;
+    border-color: #274a75;
 }
 
 #tbl-archivio .editable-row td[contenteditable="true"]:focus {
@@ -308,7 +308,7 @@ input, select {
 }
 
 .btn-cancel:hover {
-    background: #e2e8f0;
+    background: #3b577c;
 }
 
 @keyframes fadeIn {
