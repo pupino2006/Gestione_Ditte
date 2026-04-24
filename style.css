@@ -213,11 +213,35 @@ input, select {
 }
 
 #tbl-archivio th {
+    padding: 14px 10px;
+    font-weight: 700;
+    font-size: 0.95rem;
+    text-align: center;
+    border: 1px solid rgba(255,255,255,0.2);
+    text-shadow: 0 1px 2px rgba(0,0,0,0.3);
+}
+
+#tbl-archivio .header-main th {
+    font-size: 1.1rem;
+    padding: 16px 10px;
+    background: rgba(0, 40, 90, 0.4);
+    letter-spacing: 0.5px;
+}
+
+#tbl-archivio .header-sub th {
+    font-size: 0.85rem;
+    background: rgba(0, 74, 153, 0.6);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    font-weight: 600;
+}
+
+#tbl-archivio th {
     padding: 12px 10px;
     font-weight: 600;
     font-size: 0.9rem;
     text-align: center;
-    border: 1px solid rgba(211, 116, 116, 0.904);
+    border: 1px solid rgba(255, 255, 255, 0.904);
 }
 
 #tbl-archivio .header-main th {
@@ -286,7 +310,7 @@ input, select {
 
 /* Staggered rows coloring */
 #tbl-archivio tbody tr:nth-child(odd) {
-    background: #ffffff;
+    background: #838282;
 }
 
 .modal-footer {
