@@ -224,13 +224,13 @@ input, select {
 #tbl-archivio .header-main th {
     font-size: 1.1rem;
     padding: 16px 10px;
-    background: rgba(0, 40, 90, 0.4);
+    background: rgba(0, 41, 90, 0.808);
     letter-spacing: 0.5px;
 }
 
 #tbl-archivio .header-sub th {
     font-size: 0.85rem;
-    background: rgba(0, 74, 153, 0.6);
+    background: rgba(0, 74, 153, 0.795);
     text-transform: uppercase;
     letter-spacing: 1px;
     font-weight: 600;
@@ -257,7 +257,7 @@ input, select {
 }
 
 #tbl-archivio tbody tr {
-    border-bottom: 1px solid #eef2f7;
+    border-bottom: 1px solid #26466d;
     transition: background 0.2s;
 }
 
@@ -294,7 +294,7 @@ input, select {
     outline: none;
     background: #e8f4fd;
     border-color: var(--pt-blue);
-    box-shadow: 0 0 0 3px rgba(0, 74, 153, 0.1);
+    box-shadow: 0 0 0 3px rgba(0, 74, 153, 0.89);
 }
 
 #tbl-archivio td:nth-child(1) { width: 22%; }
@@ -310,7 +310,7 @@ input, select {
 
 /* Staggered rows coloring */
 #tbl-archivio tbody tr:nth-child(odd) {
-    background: #838282;
+    background: #ffffff;
 }
 
 .modal-footer {
@@ -324,7 +324,7 @@ input, select {
 .btn-cancel {
     padding: 12px 24px;
     background: #f1f5f9;
-    color: #64748b;
+    color: #ffffff;
     border: none;
     border-radius: 10px;
     font-weight: 600;
