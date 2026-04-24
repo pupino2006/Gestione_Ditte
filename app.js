@@ -162,26 +162,203 @@ async function caricaArchivio() {
     const { data, error } = await _supabase.from('visits').select('*').order('entry_date', {ascending: false});
     if(!error) {
         datiArchivio = data;
-        let table = `<table style="width:100%; border-spacing:0; margin-top:10px;">
+        let table = `<table style="width:100%; border-spacing:0; margin-top:10px;" id="tbl-archivio">
             <thead style="background:#f1f5f9;">
-                <tr><th style="padding:10px; text-align:left;">Ditta</th><th style="padding:10px;">Persone</th><th style="padding:10px;">In</th><th style="padding:10px;">Out</th></tr>
+                <tr class="header-main">
+                    <th style="padding:10px; text-align:left;" rowspan="2">Ditta</th>
+                    <th style="padding:10px;" rowspan="2">Numero Persone</th>
+                    <th style="padding:10px;" colspan="2">Entrate</th>
+                    <th style="padding:10px;" colspan="2">Uscite</th>
+                </tr>
+                <tr class="header-sub">
+                    <th style="padding:8px;">Data</th>
+                    <th style="padding:8px;">Ora</th>
+                    <th style="padding:8px;">Data</th>
+                    <th style="padding:8px;">Ora</th>
+                </tr>
             </thead><tbody>`;
         data.forEach(d => {
-            const oraIn = new Date(d.entry_date).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+            const oraIn = d.entry_date ? new Date(d.entry_date).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) : '-';
             const oraOut = d.exit_date ? new Date(d.exit_date).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) : '-';
             const dataIn = d.entry_date ? new Date(d.entry_date).toLocaleDateString('it-IT') : '-';
             const dataOut = d.exit_date ? new Date(d.exit_date).toLocaleDateString('it-IT') : '-';
-            table += `<tr style="border-bottom:1px solid #eee;">
-                <td style="padding:12px;">${d.company_name}</td>
-                <td style="padding:12px; text-align:center;">${d.operators_count || 0}</td>
-                <td style="padding:12px; text-align:center;">${dataIn}</td>
-                <td style="padding:12px; text-align:center;">${dataOut}</td>
-                <td style="padding:12px; text-align:center;">${oraIn}</td>
-                <td style="padding:12px; text-align:center;">${oraOut}</td>
+            const visitId = d.id;
+            table += `<tr class="editable-row" data-id="${visitId}">
+                <td class="cell-ditta" contenteditable="false">${d.company_name}</td>
+                <td class="cell-persone" contenteditable="true" data-field="operators_count">${d.operators_count || 0}</td>
+                <td class="cell-data-ingresso" contenteditable="true" data-field="entry_date_type" data-curval="${dataIn}">${dataIn}</td>
+                <td class="cell-ora-ingresso" contenteditable="true" data-field="entry_date_time" data-curval="${oraIn}">${oraIn}</td>
+                <td class="cell-data-uscita" contenteditable="true" data-field="exit_date_type" data-curval="${dataOut}">${dataOut}</td>
+                <td class="cell-ora-uscita" contenteditable="true" data-field="exit_date_time" data-curval="${oraOut}">${oraOut}</td>
             </tr>`;
         });
         table += `</tbody></table>`;
+        table += `<div style="margin-top:15px; color:#64748b; font-size:0.85rem;">Clicca due volte su una cella per modificarla, poi premi Invio o clicca fuori per salvare</div>`;
         container.innerHTML = table;
+        
+        // Aggiungi listener per l'editing
+        attachEditListeners();
+    }
+}
+
+function attachEditListeners() {
+    // Usa event delegation per le celle editabili
+    document.querySelectorAll('#tbl-archivio [contenteditable="true"]').forEach(cell => {
+        let valoreOriginale = '';
+        
+        cell.addEventListener('focus', function() {
+            valoreOriginale = this.textContent;
+        });
+        
+        cell.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                this.blur();
+            }
+        });
+        
+        cell.addEventListener('blur', function() {
+            const nuovoValore = this.textContent.trim();
+            const vecchioValore = valoreOriginale.trim();
+            
+            if (nuovoValore !== vecchioValore) {
+                salvaModifica(this);
+            } else {
+                this.textContent = vecchioValore; // Reset
+            }
+        });
+    });
+}
+
+async function salvaModifica(cell) {
+    const riga = cell.closest('.editable-row');
+    const visitId = riga.dataset.id;
+    const campo = cell.dataset.field;
+    const nuovoValore = cell.textContent.trim();
+    
+    // Determina l'update da fare in base al campo
+    let updateData = {};
+    
+    if (campo === 'operators_count') {
+        const num = parseInt(nuovoValore);
+        if (isNaN(num) || num < 0) {
+            alert('Inserisci un numero valido!');
+            cell.textContent = cell.dataset.curval || '0';
+            return;
+        }
+        updateData.operators_count = num;
+        cell.dataset.curval = nuovoValore;
+    } else if (campo === 'entry_date_type' || campo === 'exit_date_type') {
+        // Modifica data di entrata/uscita
+        // Per la data, accettiamo formato italiano gg/mm/aaaa
+        if (nuovoValore && nuovoValore !== '-') {
+            // Verifica formato valido (semplice check)
+            if (!/^\d{1,2}\/\d{1,2}\/\d{4}$/.test(nuovoValore)) {
+                alert('Formato data non valido. Usa gg/mm/aaaa');
+                cell.textContent = cell.dataset.curval || '-';
+                return;
+            }
+            const [g, m, a] = nuovoValore.split('/');
+            const nuovaData = new Date(`${a}-${m}-${g}T00:00:00`);
+            if (isNaN(nuovaData.getTime())) {
+                alert('Data non valida!');
+                cell.textContent = cell.dataset.curval || '-';
+                return;
+            }
+            
+            if (campo === 'entry_date_type') {
+                // Mantieni l'ora corrente
+                const oraCell = riga.querySelector('.cell-ora-ingresso');
+                const oraCorrente = oraCell && oraCell.dataset.curval ? oraCell.dataset.curval : '00:00';
+                const [ore, minuti] = oraCorrente.split(':');
+                nuovaData.setHours(ore, minuti, 0, 0);
+                updateData.entry_date = nuovaData.toISOString();
+                cell.dataset.curval = nuovoValore;
+            } else {
+                // exit_date
+                const oraCell = riga.querySelector('.cell-ora-uscita');
+                const oraCorrente = oraCell && oraCell.dataset.curval ? oraCell.dataset.curval : '00:00';
+                const [ore, minuti] = oraCorrente.split(':');
+                nuovaData.setHours(ore, minuti, 0, 0);
+                updateData.exit_date = nuovaData.toISOString();
+                cell.dataset.curval = nuovoValore;
+            }
+        } else {
+            // Se vuoto o '-', imposta a null (non dovrebbe succedere per entry)
+            if (campo === 'entry_date_type') {
+                alert('La data di entrata non può essere vuota!');
+                cell.textContent = cell.dataset.curval;
+                return;
+            } else {
+                updateData.exit_date = null;
+                cell.dataset.curval = '-';
+            }
+        }
+    } else if (campo === 'entry_date_time' || campo === 'exit_date_time') {
+        // Modifica ora (formato hh:mm)
+        if (!/^\d{1,2}:\d{2}$/.test(nuovoValore) || !/^\d{1,2}:\d{2}$/.test(nuovoValore)) {
+            const m = nuovoValore.match(/^(\d{1,2}):(\d{2})$/);
+            if (!m) {
+                alert('Formato ora non valido. Usa hh:mm');
+                cell.textContent = cell.dataset.curval || '00:00';
+                return;
+            }
+        }
+        
+        if (campo === 'entry_date_time') {
+            const dataCell = riga.querySelector('.cell-data-ingresso');
+            const dataCorrente = dataCell.dataset.curval;
+            if (dataCorrente && dataCorrente !== '-') {
+                const [g, m, a] = dataCorrente.split('/');
+                const nuovaData = new Date(`${a}-${m}-${g}T${nuovoValore}:00`);
+                updateData.entry_date = nuovaData.toISOString();
+            } else {
+                // Se non c'è data, usa oggi
+                const oggi = new Date();
+                const [ore, min] = nuovoValore.split(':');
+                oggi.setHours(ore, min, 0, 0);
+                updateData.entry_date = oggi.toISOString();
+            }
+            cell.dataset.curval = nuovoValore;
+        } else {
+            const dataCell = riga.querySelector('.cell-data-uscita');
+            const dataCorrente = dataCell.dataset.curval;
+            if (dataCorrente && dataCorrente !== '-') {
+                const [g, m, a] = dataCorrente.split('/');
+                const nuovaData = new Date(`${a}-${m}-${g}T${nuovoValore}:00`);
+                updateData.exit_date = nuovaData.toISOString();
+            } else {
+                // Usa la data di entrata + ora nuova
+                const entrataCell = riga.querySelector('.cell-data-ingresso');
+                const entrataData = entrataCell.dataset.curval;
+                if (entrataData && entrataData !== '-') {
+                    const [g, m, a] = entrataData.split('/');
+                    const nuovaData = new Date(`${a}-${m}-${g}T${nuovoValore}:00`);
+                    updateData.exit_date = nuovaData.toISOString();
+                } else {
+                    const oggi = new Date();
+                    const [ore, min] = nuovoValore.split(':');
+                    oggi.setHours(ore, min, 0, 0);
+                    updateData.exit_date = oggi.toISOString();
+                }
+            }
+            cell.dataset.curval = nuovoValore;
+        }
+    }
+    
+    // Esegui l'update su Supabase
+    const { error } = await _supabase
+        .from('visits')
+        .update(updateData)
+        .eq('id', visitId);
+    
+    if (error) {
+        alert('Errore nel salvataggio: ' + error.message);
+        // Ripristina il valore originale
+        cell.textContent = valoreOriginale;
+    } else {
+        // Ricarica l'archivio per coerenza
+        setTimeout(() => caricaArchivio(), 300);
     }
 }
 

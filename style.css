@@ -196,6 +196,99 @@ input, select {
     resize: vertical;
 }
 
+/* Tabella Archivio migliorata */
+#tbl-archivio {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 10px;
+    background: var(--white);
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
+
+#tbl-archivio thead {
+    background: linear-gradient(135deg, #004a99, #0056b3);
+    color: white;
+}
+
+#tbl-archivio th {
+    padding: 12px 10px;
+    font-weight: 600;
+    font-size: 0.9rem;
+    text-align: center;
+    border: 1px solid rgba(255,255,255,0.15);
+}
+
+#tbl-archivio .header-main th {
+    font-size: 1rem;
+    padding: 14px 10px;
+}
+
+#tbl-archivio .header-sub th {
+    font-size: 0.8rem;
+    background: rgba(255,255,255,0.1);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+#tbl-archivio tbody tr {
+    border-bottom: 1px solid #eef2f7;
+    transition: background 0.2s;
+}
+
+#tbl-archivio tbody tr:hover {
+    background: #f8fafc;
+}
+
+#tbl-archivio td {
+    padding: 12px 10px;
+    font-size: 0.9rem;
+    text-align: center;
+}
+
+#tbl-archivio td:first-child {
+    text-align: left;
+    font-weight: 600;
+    color: var(--pt-navy);
+}
+
+#tbl-archivio .editable-row td[contenteditable="true"] {
+    cursor: text;
+    border: 2px solid transparent;
+    border-radius: 6px;
+    transition: all 0.2s;
+    min-width: 80px;
+}
+
+#tbl-archivio .editable-row td[contenteditable="true"]:hover {
+    background: #f1f5f9;
+    border-color: #cbd5e1;
+}
+
+#tbl-archivio .editable-row td[contenteditable="true"]:focus {
+    outline: none;
+    background: #e8f4fd;
+    border-color: var(--pt-blue);
+    box-shadow: 0 0 0 3px rgba(0, 74, 153, 0.1);
+}
+
+#tbl-archivio td:nth-child(1) { width: 22%; }
+#tbl-archivio td:nth-child(2) { width: 10%; }
+#tbl-archivio td:nth-child(3) { width: 17%; }
+#tbl-archivio td:nth-child(4) { width: 13%; }
+#tbl-archivio td:nth-child(5) { width: 17%; }
+#tbl-archivio td:nth-child(6) { width: 13%; }
+
+#tbl-archivio tbody tr:last-child {
+    border-bottom: none;
+}
+
+/* Staggered rows coloring */
+#tbl-archivio tbody tr:nth-child(odd) {
+    background: #ffffff;
+}
+
 .modal-footer {
     padding: 24px;
     border-top: 1px solid #e2e8f0;
