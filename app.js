@@ -11,6 +11,7 @@ function showSection(id) {
 
     // Auto-caricamento quando entri nelle sezioni
     if(id === 'section-entrata') popolaSelectDitte();
+    if(id === 'home' || id === 'section-archivio') aggiornaTotalePresenze();
 }
 
 // Gestisce la selezione nel select ditta
@@ -20,6 +21,37 @@ function gestisciSelezioneDitta() {
     if (select.value === 'nuova-ditta') {
         apriModalNuovaDitta();
     }
+}
+
+async function aggiornaTotalePresenze() {
+    const homeBox = document.getElementById('total-presenze-home');
+    const archiveBox = document.getElementById('total-presenze-archive');
+
+    if (!homeBox && !archiveBox) return;
+
+    const { data, error } = await _supabase
+        .from('visits')
+        .select('operators_count')
+        .eq('status', 'active');
+
+    let totale = 0;
+    if (!error && Array.isArray(data)) {
+        totale = data.reduce((sum, row) => sum + (row.operators_count || 0), 0);
+    }
+
+    const statusText = totale > 0 ? 'Persone dentro' : 'Stabilimento vuoto';
+    const html = `
+        <div class="total-counter">
+            <div>
+                <p>${statusText}</p>
+                <strong>${totale}</strong>
+            </div>
+            <span>${totale > 0 ? 'ATTIVO' : 'INATTIVO'}</span>
+        </div>
+    `;
+
+    if (homeBox) homeBox.innerHTML = html;
+    if (archiveBox) archiveBox.innerHTML = html;
 }
 
 // Apre il modal per nuova ditta
@@ -408,3 +440,7 @@ function downloadPDF() {
 
     doc.save(`archivio_accessi_${new Date().toISOString().split('T')[0]}.pdf`);
 }
+
+document.addEventListener('DOMContentLoaded', () => {
+    aggiornaTotalePresenze();
+});
